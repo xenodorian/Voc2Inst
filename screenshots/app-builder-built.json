@@ -1,0 +1,38 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Cantor",
+      "hasCanvas": true,
+      "bodyTextLen": 999,
+      "bodyTextHash": "b4837a8cbdb7b569c5f9182212550c5e74ea7a0d7e4c936441aa0d812fc0b26c",
+      "bodyTextPrefix": "VOCAL STUDIO Cantor A harmonic bed for a lone vocal. The voice l",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Cantor",
+      "hasCanvas": true,
+      "bodyTextLen": 999,
+      "bodyTextHash": "b4837a8cbdb7b569c5f9182212550c5e74ea7a0d7e4c936441aa0d812fc0b26c",
+      "bodyTextPrefix": "VOCAL STUDIO Cantor A harmonic bed for a lone vocal. The voice l",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": false,
+  "baselineReasons": []
+}
