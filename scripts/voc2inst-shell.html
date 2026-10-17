@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cantor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #14110e;
+    --surface: #221e1a;
+    --raised: #2e2924;
+    --fg: #f4ecdf;
+    --muted: #b3a18a;
+    --brass: #e0a04a;
+    --line: #3c342c;
+    --display: "Fraunces", "Iowan Old Style", Georgia, serif;
+    --sans: "Outfit", "Avenir Next", sans-serif;
+    --mono: "DM Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { color-scheme: dark; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    line-height: 1.5;
+  }
+  button, select, input[type="file"] { font: inherit; }
+  button { cursor: pointer; }
+  button:disabled { cursor: default; opacity: 0.4; }
+  :focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  input[type="range"] { accent-color: var(--brass); width: 100%; }
+  .bar { height: 4px; background: var(--brass); }
+  .wrap { max-width: 64rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; display: flex; flex-direction: column; gap: 1.5rem; }
+  header.top { display: flex; flex-direction: column; gap: 1rem; }
+  .kicker { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin: 0; }
+  h1 { font-family: var(--display); font-weight: 500; font-size: 2.4rem; line-height: 1.05; margin: 0; }
+  .lede, .muted, .hint { color: var(--muted); }
+  .lede { margin: 0.5rem 0 0; }
+  .keyline { font-family: var(--display); font-size: 1.8rem; margin: 0; }
+  .meta { font-family: var(--mono); font-size: 0.875rem; color: var(--muted); margin: 0; }
+  .panel { border: 1px solid var(--line); background: var(--surface); border-radius: 1rem; padding: 0.75rem; }
+  .stage { position: relative; height: 14rem; border-radius: 0.75rem; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .veil {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.75rem; background: var(--surface); text-align: center; padding: 1.5rem;
+  }
+  .veil h2 { font-family: var(--display); font-weight: 500; font-size: 1.5rem; margin: 0; }
+  .meter { height: 4px; width: min(20rem, 100%); background: var(--raised); border-radius: 999px; overflow: hidden; }
+  .meter > span { display: block; height: 100%; background: var(--brass); }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+    height: 2.75rem; padding: 0 1rem; border-radius: 0.75rem; border: 1px solid transparent;
+    background: var(--brass); color: var(--bg); font-size: 0.875rem; font-weight: 500;
+  }
+  .btn.ghost { background: var(--raised); color: var(--fg); border-color: var(--line); }
+  .btn.on { background: var(--brass); color: var(--bg); border-color: var(--brass); }
+  .clock { font-family: var(--mono); font-size: 0.875rem; color: var(--muted); }
+  .alert { border: 1px solid var(--line); background: var(--surface); color: var(--brass); border-radius: 0.75rem; padding: 0.75rem 1rem; margin: 0; font-size: 0.875rem; }
+  .chords { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
+  .chords li { background: var(--surface); border-radius: 0.5rem; padding: 0.4rem 0.75rem; }
+  .deg { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
+  .sym { font-family: var(--display); font-size: 1.15rem; margin-left: 0.45rem; }
+  .grid { display: grid; gap: 1rem; }
+  label.field, .field { display: flex; flex-direction: column; gap: 0.5rem; }
+  .lbl { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  select {
+    height: 2.75rem; border-radius: 0.75rem; border: 1px solid var(--line); background: var(--raised); color: var(--fg); padding: 0 0.75rem;
+  }
+  .split { display: flex; gap: 0.5rem; }
+  .split .btn { flex: 1; }
+  .styles { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .drop {
+    min-height: 7rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem;
+    border: 1px dashed var(--line); background: var(--surface); border-radius: 1rem; text-align: center; padding: 1.5rem; cursor: pointer;
+  }
+  .drop.hot { border-color: var(--brass); }
+  .drop input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .steps { display: grid; gap: 0.75rem; list-style: none; margin: 0; padding: 0; }
+  .steps li { background: var(--surface); border-radius: 0.75rem; padding: 0.75rem 1rem; }
+  .steps p { margin: 0.25rem 0 0; font-size: 0.875rem; }
+  .foot { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  @media (min-width: 768px) {
+    .wrap { padding: 2.5rem 2rem 4rem; }
+    h1 { font-size: 3rem; }
+    header.top { flex-direction: row; align-items: flex-end; justify-content: space-between; }
+    .keyblock { text-align: right; }
+    .stage { height: 20rem; }
+    .panel { padding: 1rem; }
+    .grid { grid-template-columns: 1fr 1fr 1fr; }
+    .styles { grid-template-columns: repeat(4, 1fr); }
+    .steps { grid-template-columns: 1fr 1fr 1fr; }
+    .push { margin-left: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<main class="wrap">
+  <header class="top">
+    <div>
+      <p class="kicker">Vocal studio</p>
+      <h1>Cantor</h1>
+      <p class="lede">A harmonic bed for a lone vocal. The voice leads. The chords wait for the bar.</p>
+    </div>
+    <div class="keyblock">
+      <p class="keyline" id="keyLabel">—</p>
+      <p class="meta" id="metaLabel">Drop a vocal to begin</p>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="stage">
+      <canvas id="score" aria-hidden="true"></canvas>
+      <div class="veil" id="veil">
+        <h2 id="veilTitle">The staff is empty.</h2>
+        <p class="muted" id="veilCopy">Drop a vocal, or sound a short phrase in C so you can hear the bed before you commit a take.</p>
+        <div class="meter" id="meter" hidden><span id="meterFill"></span></div>
+        <button class="btn" id="demoBtn" type="button">Sound a demo phrase</button>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" id="playBtn" type="button" disabled>Play</button>
+      <span class="clock" id="clock">0:00 / 0:00</span>
+      <button class="btn ghost" id="exportBtn" type="button" disabled>Export WAV</button>
+      <p class="muted push">Ivory line, smoothed pitch. Brass blocks, scale-locked.</p>
+    </div>
+  </section>
+
+  <p class="alert" id="alert" hidden></p>
+  <p class="muted" id="capped" hidden>Export keeps the first six minutes.</p>
+
+  <div id="chordBlock" hidden>
+    <p class="kicker" id="gridNote"></p>
+    <ol class="chords" id="chords"></ol>
+  </div>
+
+  <section class="grid">
+    <label class="field">
+      <span class="lbl">Key</span>
+      <select id="keySelect" disabled></select>
+    </label>
+    <div class="field">
+      <div class="row" style="margin:0;gap:0.6rem">
+        <span class="lbl">Tempo</span>
+        <span class="clock" id="bpmRead">96</span>
+      </div>
+      <input id="bpm" type="range" min="60" max="180" step="1" value="96" disabled aria-label="Tempo in beats per minute" />
+      <div class="split">
+        <button class="btn on" id="m4" type="button" disabled>4/4</button>
+        <button class="btn ghost" id="m3" type="button" disabled>3/4</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="lbl">Bed level</span>
+      <input id="bed" type="range" min="0" max="1.6" step="0.01" value="1" aria-label="Backing track level" />
+      <button class="btn ghost" id="resetBtn" type="button" disabled>Use detected grid</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="styles" id="styles"></div>
+    <p class="hint" id="styleHint"></p>
+  </section>
+
+  <label class="drop" id="drop">
+    <strong id="fileName">Drop a WAV or MP3 vocal</strong>
+    <span class="muted" id="fileHint">Or click to browse</span>
+    <input id="file" type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" />
+  </label>
+
+  <ol class="steps">
+    <li><p class="kicker">01</p><p>Onsets lock the tempo and the downbeat before any chord is chosen.</p></li>
+    <li><p class="kicker">02</p><p>Pitch is median-smoothed so vibrato and jitter never move the harmony.</p></li>
+    <li><p class="kicker">03</p><p>One diatonic chord per bar. Passing tones and chromatic runs do not vote.</p></li>
+  </ol>
+  <p class="foot">Onset grid · smoothed YIN · diatonic voice-leading · single file</p>
+</main>
+<script>/*__BUNDLE__*/</script>
+<script>
+const STYLES = [
+  { id: "pad", label: "Pad", hint: "Sustained triads, one chord per bar, voiced in close position." },
+  { id: "piano", label: "Piano", hint: "Block chords and a bass that follow the phrase without leaping." },
+  { id: "arp", label: "Arpeggio", hint: "Broken chords that rise or fall with the vocal." },
+  { id: "line", label: "Counterline", hint: "A diatonic line a third below. Leaps stay inside a fifth." },
+];
+const INK = "#221e1a", IVORY = "#f4ecdf", MUTED = "#b3a18a", BRASS = "#e0a04a", LINE = "#3c342c";
+
+const player = new Voc2Inst.BedPlayer();
+const $ = (id) => document.getElementById(id);
+let features = null, arrangement = null, fileName = null;
+let phase = "idle", message = "Listening for the pulse", progress = 0, error = null;
+let style = "pad", meter = 4, bpmDraft = null, rootDraft = null, modeDraft = null;
+let bed = 1, playing = false, exporting = false, capped = false, job = 0;
+
+const keySelect = $("keySelect");
+for (let root = 0; root < 12; root++) {
+  for (const mode of ["major", "minor"]) {
+    const opt = document.createElement("option");
+    opt.value = root + ":" + mode;
+    opt.textContent = Voc2Inst.NOTE_NAMES[root] + " " + mode;
+    keySelect.appendChild(opt);
+  }
+}
+const stylesEl = $("styles");
+for (const item of STYLES) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn ghost";
+  btn.textContent = item.label;
+  btn.dataset.style = item.id;
+  btn.addEventListener("click", () => { style = item.id; syncStyle(); paintNow(); });
+  stylesEl.appendChild(btn);
+}
+
+function fmt(sec) {
+  const safe = Number.isFinite(sec) ? Math.max(0, sec) : 0;
+  const whole = Math.floor(safe);
+  return Math.floor(whole / 60) + ":" + String(whole % 60).padStart(2, "0");
+}
+function shownBpm() { return bpmDraft ?? features?.detectedBpm ?? 96; }
+function shownRoot() { return rootDraft ?? features?.detectedRoot ?? 0; }
+function shownMode() { return modeDraft ?? features?.detectedMode ?? "major"; }
+function ready() { return phase === "ready" && features && arrangement; }
+
+function recompute() {
+  if (!features) { arrangement = null; return; }
+  arrangement = Voc2Inst.arrange(features, {
+    bpm: bpmDraft, root: rootDraft, mode: modeDraft, meter, style,
+  });
+  player.notes = arrangement.notes;
+  player.style = style;
+  if (player.playing) player.play(player.currentTime());
+}
+
+function syncStyle() {
+  for (const btn of stylesEl.querySelectorAll("button")) {
+    const on = btn.dataset.style === style;
+    btn.className = on ? "btn on" : "btn ghost";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+  $("styleHint").textContent = STYLES.find((item) => item.id === style).hint;
+}
+
+function render() {
+  const ok = !!ready();
+  $("keyLabel").textContent = features ? Voc2Inst.NOTE_NAMES[shownRoot()] + " " + shownMode() : "—";
+  $("metaLabel").textContent = ok ? shownBpm() + " bpm · " + meter + "/4" : "Drop a vocal to begin";
+  $("bpm").value = String(shownBpm());
+  $("bpmRead").textContent = String(shownBpm());
+  $("bpm").disabled = !ok;
+  keySelect.disabled = !ok;
+  keySelect.value = shownRoot() + ":" + shownMode();
+  $("m4").disabled = !ok;
+  $("m3").disabled = !ok;
+  $("m4").className = meter === 4 ? "btn on" : "btn ghost";
+  $("m3").className = meter === 3 ? "btn on" : "btn ghost";
+  const overridden = bpmDraft != null || rootDraft != null || modeDraft != null;
+  $("resetBtn").disabled = !ok || !overridden;
+  $("playBtn").disabled = !ok;
+  $("playBtn").textContent = playing ? "Pause" : "Play";
+  $("exportBtn").disabled = !ok || exporting;
+  $("exportBtn").textContent = exporting ? "Rendering…" : "Export WAV";
+  $("clock").textContent = fmt(player.currentTime()) + " / " + fmt(features?.duration ?? 0);
+  $("capped").hidden = !capped;
+  const alert = $("alert");
+  if (error && phase === "ready") { alert.hidden = false; alert.textContent = error; }
+  else alert.hidden = true;
+
+  const veil = $("veil");
+  veil.hidden = phase === "ready";
+  $("meter").hidden = phase !== "working";
+  $("meterFill").style.width = Math.round(progress * 100) + "%";
+  $("demoBtn").hidden = phase === "working";
+  if (phase === "working") {
+    $("veilTitle").textContent = message;
+    $("veilCopy").textContent = "";
+  } else if (phase === "error") {
+    $("veilTitle").textContent = "That take didn't open.";
+    $("veilCopy").textContent = error || "Try a WAV or MP3 vocal.";
+  } else {
+    $("veilTitle").textContent = "The staff is empty.";
+    $("veilCopy").textContent = "Drop a vocal, or sound a short phrase in C so you can hear the bed before you commit a take.";
+  }
+
+  const block = $("chordBlock");
+  block.hidden = !ok;
+  if (ok) {
+    const sparse = features.voicedFraction < 0.08 ? " · sparse pitch" : "";
+    $("gridNote").textContent = (overridden ? "Grid set by you" : "Grid from the vocal") + sparse;
+    const list = $("chords");
+    list.replaceChildren();
+    if (arrangement.chords.length === 0) {
+      const li = document.createElement("li");
+      li.textContent = "No stable phrase to harmonize. The take may be too quiet or too spoken.";
+      list.appendChild(li);
+    } else {
+      for (const chord of arrangement.chords) {
+        const li = document.createElement("li");
+        li.innerHTML = '<span class="deg"></span><span class="sym"></span>';
+        li.querySelector(".deg").textContent = chord.degree;
+        li.querySelector(".sym").textContent = chord.symbol;
+        list.appendChild(li);
+      }
+    }
+  }
+  $("fileName").textContent = fileName || "Drop a WAV or MP3 vocal";
+  $("fileHint").textContent = fileName ? "Drop another take to replace it" : "Or click to browse";
+  syncStyle();
+}
+
+function paint(canvas, playhead) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(1, Math.floor(rect.width * dpr));
+  const h = Math.max(1, Math.floor(rect.height * dpr));
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = INK;
+  ctx.fillRect(0, 0, w, h);
+  const top = h * 0.22, bot = h * 0.9, left = Math.round(w * 0.03), right = Math.round(w * 0.985);
+  const plotW = Math.max(1, right - left);
+  ctx.strokeStyle = LINE;
+  ctx.lineWidth = Math.max(1, dpr);
+  for (let i = 0; i < 5; i++) {
+    const y = top + ((bot - top) * i) / 4;
+    ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke();
+  }
+  if (!features || !arrangement || features.duration <= 0) return;
+  const dur = features.duration;
+  const xOf = (t) => left + (Math.min(dur, Math.max(0, t)) / dur) * plotW;
+  const wave = features.waveform;
+  const midY = (top + bot) / 2;
+  const amp = (bot - top) * 0.36;
+  ctx.beginPath();
+  ctx.moveTo(left, midY);
+  for (let i = 0; i < wave.length; i++) ctx.lineTo(left + (i / Math.max(1, wave.length)) * plotW, midY - wave[i].max * amp);
+  for (let i = wave.length - 1; i >= 0; i--) ctx.lineTo(left + (i / Math.max(1, wave.length)) * plotW, midY - wave[i].min * amp);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(224, 160, 74, 0.16)";
+  ctx.fill();
+  let lo = 58, hi = 74, found = false;
+  for (const frame of features.frames) {
+    if (frame.midi == null) continue;
+    if (!found) { lo = hi = frame.midi; found = true; }
+    else { if (frame.midi < lo) lo = frame.midi; if (frame.midi > hi) hi = frame.midi; }
+  }
+  lo -= 3; hi += 3;
+  if (hi - lo < 12) { const mid = (hi + lo) / 2; lo = mid - 6; hi = mid + 6; }
+  const yOf = (midi) => bot - ((midi - lo) / (hi - lo)) * (bot - top);
+  const barDur = (60 / arrangement.bpm) * arrangement.meter;
+  let bar = arrangement.downbeat;
+  while (bar > 0.001) bar -= barDur;
+  ctx.textBaseline = "top";
+  while (bar < dur + barDur * 0.2) {
+    const x = xOf(Math.max(0, bar));
+    ctx.strokeStyle = LINE;
+    ctx.lineWidth = Math.max(1, dpr);
+    ctx.beginPath(); ctx.moveTo(x, h * 0.08); ctx.lineTo(x, bot); ctx.stroke();
+    const chord = arrangement.chords.find((mark) => Math.abs(mark.start - Math.max(0, bar)) < barDur * 0.4);
+    const width = xOf(Math.min(dur, bar + barDur)) - x;
+    if (chord && width > 28 * dpr && bar < dur) {
+      ctx.fillStyle = BRASS;
+      ctx.font = Math.round(15 * dpr) + "px Fraunces, Georgia, serif";
+      ctx.fillText(chord.symbol, x + 6 * dpr, h * 0.045);
+    }
+    bar += barDur;
+  }
+  for (const cell of arrangement.cells) {
+    if (cell.midi == null) continue;
+    const x = xOf(cell.start);
+    const width = Math.max(dpr * 2, (cell.duration / dur) * plotW - dpr);
+    const y = yOf(cell.midi);
+    const solid = cell.diatonic && !cell.passing;
+    ctx.globalAlpha = solid ? 0.92 : 0.4;
+    ctx.fillStyle = solid ? BRASS : MUTED;
+    ctx.fillRect(x, y - 1.5 * dpr, width, 3 * dpr);
+  }
+  ctx.globalAlpha = 1;
+  ctx.beginPath();
+  ctx.strokeStyle = IVORY;
+  ctx.lineWidth = 1.4 * dpr;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  let drawing = false;
+  const step = Math.max(1, Math.floor(features.frames.length / 1000));
+  for (let i = 0; i < features.frames.length; i += step) {
+    const frame = features.frames[i];
+    if (frame.midi == null) { drawing = false; continue; }
+    const x = xOf(frame.t), y = yOf(frame.midi);
+    if (!drawing) { ctx.moveTo(x, y); drawing = true; } else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  if (playhead >= 0) {
+    const x = xOf(playhead);
+    ctx.strokeStyle = BRASS;
+    ctx.lineWidth = 1.5 * dpr;
+    ctx.beginPath(); ctx.moveTo(x, h * 0.04); ctx.lineTo(x, bot); ctx.stroke();
+  }
+}
+
+const canvas = $("score");
+function paintNow() { paint(canvas, player.currentTime()); }
+let ended = false;
+function tick() {
+  const time = player.currentTime();
+  paint(canvas, time);
+  if (playing) $("clock").textContent = fmt(time) + " / " + fmt(features?.duration ?? 0);
+  if (playing && features && time >= features.duration - 0.05) {
+    if (!ended) { ended = true; player.pause(); playing = false; render(); }
+  } else if (!playing) ended = false;
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+async function ingest(name, samples, sampleRate, buffer) {
+  const id = ++job;
+  player.pause();
+  playing = false;
+  features = null;
+  arrangement = null;
+  fileName = name;
+  error = null;
+  capped = false;
+  bpmDraft = rootDraft = modeDraft = null;
+  phase = "working";
+  progress = 0.02;
+  message = "Listening for the pulse";
+  render();
+  try {
+    const next = await Voc2Inst.analyzeVocal(samples, sampleRate, (label, ratio) => {
+      if (id !== job) return;
+      message = label;
+      progress = ratio;
+      render();
+    });
+    if (id !== job) return;
+    player.vocal = buffer;
+    player.origin = 0;
+    features = next;
+    phase = "ready";
+    recompute();
+    render();
+    paintNow();
+  } catch (err) {
+    if (id !== job) return;
+    phase = "error";
+    error = err instanceof Error ? err.message : "Could not read that vocal.";
+    render();
+  }
+}
+
+async function onFile(file) {
+  player.prime();
+  phase = "working";
+  message = "Opening the take";
+  error = null;
+  render();
+  try {
+    const encoded = await file.arrayBuffer();
+    const audio = await player.prime().decodeAudioData(encoded.slice(0));
+    const channels = [];
+    for (let c = 0; c < audio.numberOfChannels; c++) channels.push(audio.getChannelData(c));
+    await ingest(file.name, Voc2Inst.mixToMono(channels), audio.sampleRate, audio);
+  } catch {
+    phase = "error";
+    error = "That file didn't decode. Try a WAV or MP3 vocal.";
+    render();
+  }
+}
+
+function onDemo() {
+  player.prime();
+  const samples = Voc2Inst.makeDemoVocal();
+  const buffer = player.makeBuffer(samples, 44100);
+  ingest("Demo phrase", samples, 44100, buffer);
+}
+
+function toggle() {
+  if (!features) return;
+  if (player.playing) { player.pause(); playing = false; render(); return; }
+  let from = player.currentTime();
+  if (from >= features.duration - 0.08) from = 0;
+  player.play(from);
+  playing = true;
+  ended = false;
+  render();
+}
+
+$("demoBtn").addEventListener("click", onDemo);
+$("playBtn").addEventListener("click", toggle);
+$("exportBtn").addEventListener("click", async () => {
+  if (!player.vocal || !arrangement) return;
+  exporting = true;
+  error = null;
+  render();
+  try {
+    const blob = await Voc2Inst.exportMix(player.vocal, arrangement.notes, style, bed);
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "cantor-bed.wav";
+    anchor.click();
+    URL.revokeObjectURL(url);
+    capped = player.vocal.duration > 360;
+  } catch {
+    error = "The mix couldn't be rendered in this browser.";
+  } finally {
+    exporting = false;
+    render();
+  }
+});
+keySelect.addEventListener("change", () => {
+  const [root, mode] = keySelect.value.split(":");
+  rootDraft = Number(root);
+  modeDraft = mode === "minor" ? "minor" : "major";
+  recompute();
+  render();
+});
+$("bpm").addEventListener("input", () => {
+  bpmDraft = Number($("bpm").value);
+  recompute();
+  render();
+});
+$("m4").addEventListener("click", () => { meter = 4; recompute(); render(); });
+$("m3").addEventListener("click", () => { meter = 3; recompute(); render(); });
+$("bed").addEventListener("input", () => {
+  bed = Number($("bed").value);
+  player.setBed(bed);
+});
+$("resetBtn").addEventListener("click", () => {
+  bpmDraft = rootDraft = modeDraft = null;
+  recompute();
+  render();
+});
+$("file").addEventListener("change", (event) => {
+  const file = event.target.files && event.target.files[0];
+  event.target.value = "";
+  if (file) onFile(file);
+});
+const drop = $("drop");
+drop.addEventListener("dragover", (event) => { event.preventDefault(); drop.classList.add("hot"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("hot"));
+drop.addEventListener("drop", (event) => {
+  event.preventDefault();
+  drop.classList.remove("hot");
+  const file = event.dataTransfer.files[0];
+  if (file) onFile(file);
+});
+window.addEventListener("keydown", (event) => {
+  if (event.code !== "Space") return;
+  const tag = event.target && event.target.tagName;
+  if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+  event.preventDefault();
+  toggle();
+});
+render();
+</script>
+</body>
+</html>

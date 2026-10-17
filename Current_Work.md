@@ -15,6 +15,7 @@ The product in the UI is **Cantor**. The repository name is Voc2Inst (vocal → 
 - Studio checks (`src/lib/cantor/check-entry.ts`, `scripts/cantor-check.mts`): A440 tracking, vibrato smoothing, demo phrase lands on C major with chords C–F–G–C, scale lock, and bounded voice-leading.
 - Preview smoke of the empty staff (desktop and mobile) showed visible copy, a canvas, and a clean console. Auth and database stay off; nothing is uploaded.
 - Share card: `public/og.jpg` (1200×630, “CANTOR / THE VOICE LEADS”) and `public/x-banner.jpg` (1200×264, title on the left). `src/lib/og/site.json` is `type: x:game`, `card: custom`. Brand check is clean. The brass waveform favicon was left as-is.
+- Single file: [Voc2Inst.html](Voc2Inst.html) is the same studio with the engine inlined. Open it in a browser. Rebuild by bundling `src/voc2inst-entry.ts` into `scripts/voc2inst-shell.html`.
 
 ## This pass
 
