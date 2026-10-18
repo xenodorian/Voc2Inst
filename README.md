@@ -2,7 +2,13 @@
 
 Cantor — a browser studio that turns a lone vocal into a diatonic instrumental bed.
 
+Live page: [xenodorian.github.io/Voc2Inst](https://xenodorian.github.io/Voc2Inst/)
+
 Drop a WAV or MP3 (or sound the built-in demo phrase). The take is analyzed for pulse, key, and a smoothed pitch contour. One chord is chosen per bar, then voiced as a pad, piano, arpeggio, or counterline. Play it back against the vocal and export a stereo WAV.
+
+The single-file studio is [Voc2Inst.html](Voc2Inst.html). GitHub Pages serves that same file as [index.html](index.html).
+
+## Stack
 
 ## Stack
 

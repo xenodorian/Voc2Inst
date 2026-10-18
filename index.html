@@ -1,0 +1,1924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Cantor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Outfit:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #14110e;
+    --surface: #221e1a;
+    --raised: #2e2924;
+    --fg: #f4ecdf;
+    --muted: #b3a18a;
+    --brass: #e0a04a;
+    --line: #3c342c;
+    --display: "Fraunces", "Iowan Old Style", Georgia, serif;
+    --sans: "Outfit", "Avenir Next", sans-serif;
+    --mono: "DM Mono", ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { color-scheme: dark; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    line-height: 1.5;
+  }
+  button, select, input[type="file"] { font: inherit; }
+  button { cursor: pointer; }
+  button:disabled { cursor: default; opacity: 0.4; }
+  :focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+  input[type="range"] { accent-color: var(--brass); width: 100%; }
+  .bar { height: 4px; background: var(--brass); }
+  .wrap { max-width: 64rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; display: flex; flex-direction: column; gap: 1.5rem; }
+  header.top { display: flex; flex-direction: column; gap: 1rem; }
+  .kicker { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--brass); margin: 0; }
+  h1 { font-family: var(--display); font-weight: 500; font-size: 2.4rem; line-height: 1.05; margin: 0; }
+  .lede, .muted, .hint { color: var(--muted); }
+  .lede { margin: 0.5rem 0 0; }
+  .keyline { font-family: var(--display); font-size: 1.8rem; margin: 0; }
+  .meta { font-family: var(--mono); font-size: 0.875rem; color: var(--muted); margin: 0; }
+  .panel { border: 1px solid var(--line); background: var(--surface); border-radius: 1rem; padding: 0.75rem; }
+  .stage { position: relative; height: 14rem; border-radius: 0.75rem; overflow: hidden; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .veil {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.75rem; background: var(--surface); text-align: center; padding: 1.5rem;
+  }
+  .veil h2 { font-family: var(--display); font-weight: 500; font-size: 1.5rem; margin: 0; }
+  .meter { height: 4px; width: min(20rem, 100%); background: var(--raised); border-radius: 999px; overflow: hidden; }
+  .meter > span { display: block; height: 100%; background: var(--brass); }
+  .row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-top: 0.75rem; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+    height: 2.75rem; padding: 0 1rem; border-radius: 0.75rem; border: 1px solid transparent;
+    background: var(--brass); color: var(--bg); font-size: 0.875rem; font-weight: 500;
+  }
+  .btn.ghost { background: var(--raised); color: var(--fg); border-color: var(--line); }
+  .btn.on { background: var(--brass); color: var(--bg); border-color: var(--brass); }
+  .clock { font-family: var(--mono); font-size: 0.875rem; color: var(--muted); }
+  .alert { border: 1px solid var(--line); background: var(--surface); color: var(--brass); border-radius: 0.75rem; padding: 0.75rem 1rem; margin: 0; font-size: 0.875rem; }
+  .chords { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
+  .chords li { background: var(--surface); border-radius: 0.5rem; padding: 0.4rem 0.75rem; }
+  .deg { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
+  .sym { font-family: var(--display); font-size: 1.15rem; margin-left: 0.45rem; }
+  .grid { display: grid; gap: 1rem; }
+  label.field, .field { display: flex; flex-direction: column; gap: 0.5rem; }
+  .lbl { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  select {
+    height: 2.75rem; border-radius: 0.75rem; border: 1px solid var(--line); background: var(--raised); color: var(--fg); padding: 0 0.75rem;
+  }
+  .split { display: flex; gap: 0.5rem; }
+  .split .btn { flex: 1; }
+  .styles { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .drop {
+    min-height: 7rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.35rem;
+    border: 1px dashed var(--line); background: var(--surface); border-radius: 1rem; text-align: center; padding: 1.5rem; cursor: pointer;
+  }
+  .drop.hot { border-color: var(--brass); }
+  .drop input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .steps { display: grid; gap: 0.75rem; list-style: none; margin: 0; padding: 0; }
+  .steps li { background: var(--surface); border-radius: 0.75rem; padding: 0.75rem 1rem; }
+  .steps p { margin: 0.25rem 0 0; font-size: 0.875rem; }
+  .foot { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  @media (min-width: 768px) {
+    .wrap { padding: 2.5rem 2rem 4rem; }
+    h1 { font-size: 3rem; }
+    header.top { flex-direction: row; align-items: flex-end; justify-content: space-between; }
+    .keyblock { text-align: right; }
+    .stage { height: 20rem; }
+    .panel { padding: 1rem; }
+    .grid { grid-template-columns: 1fr 1fr 1fr; }
+    .styles { grid-template-columns: repeat(4, 1fr); }
+    .steps { grid-template-columns: 1fr 1fr 1fr; }
+    .push { margin-left: auto; }
+  }
+</style>
+</head>
+<body>
+<div class="bar"></div>
+<main class="wrap">
+  <header class="top">
+    <div>
+      <p class="kicker">Vocal studio</p>
+      <h1>Cantor</h1>
+      <p class="lede">A harmonic bed for a lone vocal. The voice leads. The chords wait for the bar.</p>
+    </div>
+    <div class="keyblock">
+      <p class="keyline" id="keyLabel">—</p>
+      <p class="meta" id="metaLabel">Drop a vocal to begin</p>
+    </div>
+  </header>
+
+  <section class="panel">
+    <div class="stage">
+      <canvas id="score" aria-hidden="true"></canvas>
+      <div class="veil" id="veil">
+        <h2 id="veilTitle">The staff is empty.</h2>
+        <p class="muted" id="veilCopy">Drop a vocal, or sound a short phrase in C so you can hear the bed before you commit a take.</p>
+        <div class="meter" id="meter" hidden><span id="meterFill"></span></div>
+        <button class="btn" id="demoBtn" type="button">Sound a demo phrase</button>
+      </div>
+    </div>
+    <div class="row">
+      <button class="btn" id="playBtn" type="button" disabled>Play</button>
+      <span class="clock" id="clock">0:00 / 0:00</span>
+      <button class="btn ghost" id="exportBtn" type="button" disabled>Export WAV</button>
+      <p class="muted push">Ivory line, smoothed pitch. Brass blocks, scale-locked.</p>
+    </div>
+  </section>
+
+  <p class="alert" id="alert" hidden></p>
+  <p class="muted" id="capped" hidden>Export keeps the first six minutes.</p>
+
+  <div id="chordBlock" hidden>
+    <p class="kicker" id="gridNote"></p>
+    <ol class="chords" id="chords"></ol>
+  </div>
+
+  <section class="grid">
+    <label class="field">
+      <span class="lbl">Key</span>
+      <select id="keySelect" disabled></select>
+    </label>
+    <div class="field">
+      <div class="row" style="margin:0;gap:0.6rem">
+        <span class="lbl">Tempo</span>
+        <span class="clock" id="bpmRead">96</span>
+      </div>
+      <input id="bpm" type="range" min="60" max="180" step="1" value="96" disabled aria-label="Tempo in beats per minute" />
+      <div class="split">
+        <button class="btn on" id="m4" type="button" disabled>4/4</button>
+        <button class="btn ghost" id="m3" type="button" disabled>3/4</button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="lbl">Bed level</span>
+      <input id="bed" type="range" min="0" max="1.6" step="0.01" value="1" aria-label="Backing track level" />
+      <button class="btn ghost" id="resetBtn" type="button" disabled>Use detected grid</button>
+    </div>
+  </section>
+
+  <section>
+    <div class="styles" id="styles"></div>
+    <p class="hint" id="styleHint"></p>
+  </section>
+
+  <label class="drop" id="drop">
+    <strong id="fileName">Drop a WAV or MP3 vocal</strong>
+    <span class="muted" id="fileHint">Or click to browse</span>
+    <input id="file" type="file" accept="audio/*,.wav,.mp3,.m4a,.ogg,.flac" />
+  </label>
+
+  <ol class="steps">
+    <li><p class="kicker">01</p><p>Onsets lock the tempo and the downbeat before any chord is chosen.</p></li>
+    <li><p class="kicker">02</p><p>Pitch is median-smoothed so vibrato and jitter never move the harmony.</p></li>
+    <li><p class="kicker">03</p><p>One diatonic chord per bar. Passing tones and chromatic runs do not vote.</p></li>
+  </ol>
+  <p class="foot">Onset grid · smoothed YIN · diatonic voice-leading · single file</p>
+</main>
+<script>"use strict";
+var Voc2Inst = (() => {
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __export = (target, all) => {
+    for (var name in all)
+      __defProp(target, name, { get: all[name], enumerable: true });
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+  // src/voc2inst-entry.ts
+  var voc2inst_entry_exports = {};
+  __export(voc2inst_entry_exports, {
+    BedPlayer: () => BedPlayer,
+    NOTE_NAMES: () => NOTE_NAMES,
+    analyzeVocal: () => analyzeVocal,
+    arrange: () => arrange,
+    exportMix: () => exportMix,
+    makeDemoVocal: () => makeDemoVocal,
+    mixToMono: () => mixToMono
+  });
+
+  // src/lib/cantor/theory.ts
+  var NOTE_NAMES = ["C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B"];
+  var MAJOR_STEPS = [0, 2, 4, 5, 7, 9, 11];
+  var MINOR_STEPS = [0, 2, 3, 5, 7, 8, 10];
+  var MAJOR_PROFILE = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
+  var MINOR_PROFILE = [6.33, 2.68, 3.52, 5.38, 2.6, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+  function stepsFor(mode) {
+    return mode === "major" ? MAJOR_STEPS : MINOR_STEPS;
+  }
+  function pitchClass(midi) {
+    return (Math.round(midi) % 12 + 12) % 12;
+  }
+  function keyName(root, mode) {
+    return `${NOTE_NAMES[root]} ${mode}`;
+  }
+  function hzToMidi(hz) {
+    return 69 + 12 * Math.log2(hz / 440);
+  }
+  function midiToHz(midi) {
+    return 440 * 2 ** ((midi - 69) / 12);
+  }
+  function buildScale(root, mode, low = 36, high = 84) {
+    const steps = stepsFor(mode);
+    const tones = [];
+    for (let m = low; m <= high; m++) {
+      if (steps.includes((pitchClass(m) - root + 12) % 12)) tones.push(m);
+    }
+    return tones;
+  }
+  function nearestScaleTone(midi, scale) {
+    let best = scale[0] ?? Math.round(midi);
+    let dist = Infinity;
+    for (const tone of scale) {
+      const d = Math.abs(tone - midi);
+      if (d < dist) {
+        dist = d;
+        best = tone;
+      }
+    }
+    return best;
+  }
+  function inScale(midi, root, mode) {
+    return stepsFor(mode).includes((pitchClass(midi) - root + 12) % 12);
+  }
+  function diatonicTriads(root, mode) {
+    const scale = stepsFor(mode);
+    const qualities = mode === "major" ? ["maj", "min", "min", "maj", "maj", "min", "dim"] : ["min", "dim", "maj", "min", "min", "maj", "maj"];
+    const degrees = mode === "major" ? ["I", "ii", "iii", "IV", "V", "vi", "vii\xB0"] : ["i", "ii\xB0", "III", "iv", "v", "VI", "VII"];
+    const triads = scale.map((degree, i) => ({
+      rootPc: (root + degree) % 12,
+      third: (root + scale[(i + 2) % 7]) % 12,
+      fifth: (root + scale[(i + 4) % 7]) % 12,
+      quality: qualities[i],
+      degree: degrees[i],
+      degreeIndex: i,
+      altered: false
+    }));
+    if (mode === "minor") {
+      triads.push({
+        rootPc: (root + 7) % 12,
+        third: (root + 11) % 12,
+        fifth: (root + 2) % 12,
+        quality: "maj",
+        degree: "V",
+        degreeIndex: 4,
+        altered: true
+      });
+    }
+    return triads;
+  }
+  function triadSymbol(triad) {
+    const name = NOTE_NAMES[triad.rootPc];
+    if (triad.quality === "min") return `${name}m`;
+    if (triad.quality === "dim") return `${name}dim`;
+    return name;
+  }
+  function triadContains(triad, pc) {
+    return pc === triad.rootPc || pc === triad.third || pc === triad.fifth;
+  }
+  function pcDistance(a, b) {
+    const d = Math.abs(a - b) % 12;
+    return Math.min(d, 12 - d);
+  }
+  var MOTION_COST = [0.32, 1.15, 0.22, 0.38, 0.42, 0.08, 0.95];
+  function rootMotionCost(from, to) {
+    return MOTION_COST[pcDistance(from, to)];
+  }
+  function pearson(a, b) {
+    const n = a.length;
+    let meanA = 0;
+    let meanB = 0;
+    for (let i = 0; i < n; i++) {
+      meanA += a[i];
+      meanB += b[i];
+    }
+    meanA /= n;
+    meanB /= n;
+    let num = 0;
+    let denA = 0;
+    let denB = 0;
+    for (let i = 0; i < n; i++) {
+      const da = a[i] - meanA;
+      const db = b[i] - meanB;
+      num += da * db;
+      denA += da * da;
+      denB += db * db;
+    }
+    const den = Math.sqrt(denA * denB);
+    return den === 0 ? 0 : num / den;
+  }
+  function clamp(n, lo, hi) {
+    return Math.max(lo, Math.min(hi, n));
+  }
+
+  // src/lib/cantor/analyze.ts
+  var PITCH_RATE = 8e3;
+  var MIN_HZ = 75;
+  var MAX_HZ = 1e3;
+  var YIN_THRESHOLD = 0.16;
+  function mixToMono(channels) {
+    const n = channels[0]?.length ?? 0;
+    const out = new Float32Array(n);
+    if (channels.length === 0 || n === 0) return out;
+    for (const ch of channels) {
+      for (let i = 0; i < n; i++) {
+        const s = ch[i];
+        if (Number.isFinite(s)) out[i] += s;
+      }
+    }
+    const inv = 1 / channels.length;
+    for (let i = 0; i < n; i++) out[i] *= inv;
+    return out;
+  }
+  function normalizePeak(input, peakTarget = 0.85) {
+    const out = new Float32Array(input.length);
+    let peak = 0;
+    for (let i = 0; i < input.length; i++) {
+      const s = Number.isFinite(input[i]) ? input[i] : 0;
+      out[i] = s;
+      const a = Math.abs(s);
+      if (a > peak) peak = a;
+    }
+    if (peak > 8e-4) {
+      const g = peakTarget / peak;
+      for (let i = 0; i < out.length; i++) out[i] *= g;
+    }
+    return out;
+  }
+  function downsample(input, inRate, outRate) {
+    if (outRate >= inRate - 1) return input;
+    const ratio = inRate / outRate;
+    const outLen = Math.max(0, Math.floor(input.length / ratio));
+    const out = new Float32Array(outLen);
+    for (let i = 0; i < outLen; i++) {
+      const a = Math.floor(i * ratio);
+      const b = Math.min(input.length, Math.max(a + 1, Math.floor((i + 1) * ratio)));
+      let s = 0;
+      for (let j = a; j < b; j++) s += input[j];
+      out[i] = s / (b - a);
+    }
+    return out;
+  }
+  function nextPow2(n) {
+    let p = 1;
+    while (p < n) p <<= 1;
+    return p;
+  }
+  function fft(re, im) {
+    const n = re.length;
+    for (let i = 1, j = 0; i < n; i++) {
+      let bit = n >> 1;
+      for (; j & bit; bit >>= 1) j ^= bit;
+      j ^= bit;
+      if (i < j) {
+        const tr = re[i];
+        re[i] = re[j];
+        re[j] = tr;
+        const ti = im[i];
+        im[i] = im[j];
+        im[j] = ti;
+      }
+    }
+    for (let len = 2; len <= n; len <<= 1) {
+      const ang = -2 * Math.PI / len;
+      const wlenRe = Math.cos(ang);
+      const wlenIm = Math.sin(ang);
+      const half = len >> 1;
+      for (let i = 0; i < n; i += len) {
+        let wRe = 1;
+        let wIm = 0;
+        for (let j = 0; j < half; j++) {
+          const a = i + j;
+          const b = a + half;
+          const uRe = re[a];
+          const uIm = im[a];
+          const vRe = re[b] * wRe - im[b] * wIm;
+          const vIm = re[b] * wIm + im[b] * wRe;
+          re[a] = uRe + vRe;
+          im[a] = uIm + vIm;
+          re[b] = uRe - vRe;
+          im[b] = uIm - vIm;
+          const nwRe = wRe * wlenRe - wIm * wlenIm;
+          wIm = wRe * wlenIm + wIm * wlenRe;
+          wRe = nwRe;
+        }
+      }
+    }
+  }
+  function ifft(re, im) {
+    const n = re.length;
+    for (let i = 0; i < n; i++) im[i] = -im[i];
+    fft(re, im);
+    for (let i = 0; i < n; i++) {
+      re[i] /= n;
+      im[i] = -im[i] / n;
+    }
+  }
+  function parabolicOffset(ym1, y0, yp1) {
+    const denom = 2 * (ym1 - 2 * y0 + yp1);
+    if (Math.abs(denom) < 1e-12) return 0;
+    return Math.max(-1, Math.min(1, (ym1 - yp1) / denom));
+  }
+  async function trackPitch(samples, sampleRate, onProgress) {
+    const ds = downsample(samples, sampleRate, PITCH_RATE);
+    const win = 1024;
+    const hop = 80;
+    const nfft = nextPow2(win * 2);
+    const tauMin = Math.max(2, Math.floor(PITCH_RATE / MAX_HZ));
+    const tauMax = Math.min(win - 3, Math.floor(PITCH_RATE / MIN_HZ));
+    const re = new Float64Array(nfft);
+    const im = new Float64Array(nfft);
+    const prefix = new Float64Array(win + 1);
+    const diff = new Float64Array(tauMax + 1);
+    const cmnd = new Float64Array(tauMax + 1);
+    const total = Math.max(0, Math.floor((ds.length - win) / hop));
+    const frames = new Array(total);
+    for (let fi = 0; fi < total; fi++) {
+      const start = fi * hop;
+      let mean = 0;
+      for (let i = 0; i < win; i++) mean += ds[start + i];
+      mean /= win;
+      prefix[0] = 0;
+      re.fill(0);
+      im.fill(0);
+      for (let i = 0; i < win; i++) {
+        const x = ds[start + i] - mean;
+        re[i] = x;
+        prefix[i + 1] = prefix[i] + x * x;
+      }
+      const rms = Math.sqrt(prefix[win] / win);
+      const t = (start + win / 2) / PITCH_RATE;
+      if (rms < 0.012) {
+        frames[fi] = { t, midi: null, conf: 0 };
+      } else {
+        fft(re, im);
+        for (let i = 0; i < nfft; i++) {
+          re[i] = re[i] * re[i] + im[i] * im[i];
+          im[i] = 0;
+        }
+        ifft(re, im);
+        diff[0] = 0;
+        let running = 0;
+        for (let tau = 1; tau <= tauMax; tau++) {
+          const sum1 = prefix[win - tau];
+          const sum2 = prefix[win] - prefix[tau];
+          const d = sum1 + sum2 - 2 * re[tau];
+          diff[tau] = d > 0 ? d : 0;
+          running += diff[tau];
+          cmnd[tau] = diff[tau] * tau / (running || 1);
+        }
+        let tauEst = -1;
+        for (let tau = tauMin; tau <= tauMax; tau++) {
+          if (cmnd[tau] < YIN_THRESHOLD) {
+            while (tau < tauMax && cmnd[tau + 1] < cmnd[tau]) tau++;
+            tauEst = tau;
+            break;
+          }
+        }
+        if (tauEst < 0) {
+          let minC = Infinity;
+          let minT = tauMin;
+          for (let tau = tauMin; tau <= tauMax; tau++) {
+            if (cmnd[tau] < minC) {
+              minC = cmnd[tau];
+              minT = tau;
+            }
+          }
+          tauEst = minC < 0.5 ? minT : -1;
+        }
+        if (tauEst > tauMin * 2) {
+          const half = Math.round(tauEst / 2);
+          if (half >= tauMin && cmnd[half] < 0.42 && cmnd[half] <= cmnd[Math.max(tauMin, half - 1)] && cmnd[half] <= cmnd[Math.min(tauMax, half + 1)] && cmnd[half] < cmnd[tauEst] + 0.18) {
+            tauEst = half;
+          }
+        }
+        if (tauEst < 0) {
+          frames[fi] = { t, midi: null, conf: 0 };
+        } else {
+          const tauF = tauEst + parabolicOffset(diff[tauEst - 1], diff[tauEst], diff[tauEst + 1]);
+          const hz = PITCH_RATE / tauF;
+          const conf = Math.max(0, Math.min(1, 1 - cmnd[tauEst]));
+          if (hz < MIN_HZ || hz > MAX_HZ || conf < 0.78) {
+            frames[fi] = { t, midi: null, conf };
+          } else {
+            frames[fi] = { t, midi: hzToMidi(hz), conf };
+          }
+        }
+      }
+      if ((fi & 63) === 0) {
+        onProgress?.(total === 0 ? 1 : fi / total);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+    }
+    return frames;
+  }
+  function repairOctaves(midi) {
+    const out = midi.slice();
+    for (let i = 1; i < out.length; i++) {
+      const prev = out[i - 1];
+      const cur = out[i];
+      if (prev == null || cur == null) continue;
+      const diff = cur - prev;
+      if (Math.abs(Math.abs(diff) - 12) <= 1.3) out[i] = cur - Math.sign(diff) * 12;
+    }
+    return out;
+  }
+  function medianFilter(midi, radius) {
+    const out = new Array(midi.length);
+    const window = [];
+    for (let i = 0; i < midi.length; i++) {
+      window.length = 0;
+      for (let j = i - radius; j <= i + radius; j++) {
+        if (j < 0 || j >= midi.length) continue;
+        const v = midi[j];
+        if (v != null) window.push(v);
+      }
+      if (window.length < radius) {
+        out[i] = null;
+        continue;
+      }
+      window.sort((a, b) => a - b);
+      out[i] = window.length % 2 === 1 ? window[window.length >> 1] : (window[window.length / 2 - 1] + window[window.length / 2]) / 2;
+    }
+    return out;
+  }
+  function smoothRuns(midi, radius) {
+    const out = midi.slice();
+    let i = 0;
+    while (i < midi.length) {
+      if (midi[i] == null) {
+        i++;
+        continue;
+      }
+      let j = i;
+      while (j < midi.length && midi[j] != null) j++;
+      for (let k = i; k < j; k++) {
+        const a = Math.max(i, k - radius);
+        const b = Math.min(j - 1, k + radius);
+        let s = 0;
+        let c = 0;
+        for (let t = a; t <= b; t++) {
+          s += midi[t];
+          c++;
+        }
+        out[k] = s / c;
+      }
+      i = j;
+    }
+    return out;
+  }
+  function smoothContour(raw) {
+    const midis = repairOctaves(raw.map((f) => f.midi));
+    const med = medianFilter(midis, 3);
+    const repaired = repairOctaves(med);
+    const smoothed = smoothRuns(repaired, 6);
+    return raw.map((f, i) => ({
+      t: f.t,
+      midi: smoothed[i],
+      conf: f.conf
+    }));
+  }
+  function halfWaveFlux(env) {
+    const flux = new Float32Array(env.length);
+    for (let i = 1; i < env.length; i++) {
+      const d = env[i] - env[i - 1];
+      flux[i] = d > 0 ? d : 0;
+    }
+    const sm = new Float32Array(flux.length);
+    for (let i = 0; i < flux.length; i++) {
+      const a = flux[Math.max(0, i - 1)];
+      const b = flux[i];
+      const c = flux[Math.min(flux.length - 1, i + 1)];
+      sm[i] = (a + 2 * b + c) / 4;
+    }
+    let peak = 0;
+    for (let i = 0; i < sm.length; i++) if (sm[i] > peak) peak = sm[i];
+    if (peak > 0) {
+      for (let i = 0; i < sm.length; i++) sm[i] /= peak;
+    }
+    return sm;
+  }
+  function onsetFlux(samples, sampleRate) {
+    const rate = 16e3;
+    const ds = downsample(samples, sampleRate, rate);
+    const pad = Math.round(rate * 0.06);
+    const padded = new Float32Array(ds.length + pad);
+    padded.set(ds, pad);
+    const hop = Math.round(rate * 0.01);
+    const win = hop * 2;
+    const n = Math.max(0, Math.floor((padded.length - win) / hop));
+    const energy = new Float32Array(n);
+    const high = new Float32Array(n);
+    for (let i = 0; i < n; i++) {
+      const start = i * hop;
+      let e = 0;
+      let h = 0;
+      let prev = 0;
+      for (let j = 0; j < win; j++) {
+        const s = padded[start + j];
+        e += s * s;
+        const d = s - prev;
+        h += d * d;
+        prev = s;
+      }
+      energy[i] = Math.log(1e-8 + e);
+      high[i] = Math.log(1e-8 + h);
+    }
+    const a = halfWaveFlux(energy);
+    const b = halfWaveFlux(high);
+    const mixed = new Float32Array(n);
+    for (let i = 0; i < n; i++) mixed[i] = 0.62 * a[i] + 0.38 * b[i];
+    const padFrames = Math.round(pad / hop);
+    const out = new Float32Array(Math.max(0, n - padFrames));
+    for (let i = 0; i < n; i++) {
+      const orig = i - padFrames;
+      if (orig >= 0 && orig < out.length) out[orig] = Math.max(out[orig], mixed[i]);
+      else if (out.length > 0) out[0] = Math.max(out[0], mixed[i]);
+    }
+    return { flux: out, hop: hop / rate };
+  }
+  function priorFor(bpm) {
+    const z = (bpm - 104) / 55;
+    return Math.exp(-0.5 * z * z);
+  }
+  function scoreGrid(flux, period, phase) {
+    if (period < 4) return -Infinity;
+    let sum = 0;
+    let n = 0;
+    let hits = 0;
+    for (let t = phase; t < flux.length - 1; t += period) {
+      const i = Math.round(t);
+      const left = i > 0 ? flux[i - 1] : 0;
+      const mid = flux[i] ?? 0;
+      const right = i + 1 < flux.length ? flux[i + 1] : 0;
+      const v = mid + 0.45 * left + 0.45 * right;
+      sum += v;
+      if (mid > 0.15) hits++;
+      n++;
+    }
+    if (n < 3) return -Infinity;
+    const hitRate = hits / n;
+    return sum / Math.sqrt(n) * (0.5 + 0.5 * hitRate);
+  }
+  function phaseAtBpm(flux, hopSec, bpm) {
+    const period = 60 / bpm / hopSec;
+    const steps = 24;
+    let best = 0;
+    let bestScore = -Infinity;
+    for (let p = 0; p < steps; p++) {
+      const phase = p / steps * period;
+      const score = scoreGrid(flux, period, phase);
+      if (score > bestScore) {
+        bestScore = score;
+        best = phase;
+      }
+    }
+    return best * hopSec;
+  }
+  function downbeatAt(flux, hopSec, bpm, firstBeat, beatsPerBar) {
+    const beatSec = 60 / bpm;
+    const period = beatSec / hopSec;
+    const bar = period * beatsPerBar;
+    let bestShift = 0;
+    let bestScore = -Infinity;
+    for (let shift = 0; shift < beatsPerBar; shift++) {
+      const origin = firstBeat / hopSec + shift * period;
+      let sum = 0;
+      let n = 0;
+      for (let t = origin; t < flux.length; t += bar) {
+        const i = Math.round(t);
+        if (i < 0 || i >= flux.length) continue;
+        sum += flux[i];
+        n++;
+      }
+      const score = n > 0 ? sum / n : -Infinity;
+      if (score > bestScore) {
+        bestScore = score;
+        bestShift = shift;
+      }
+    }
+    let downbeat = firstBeat + bestShift * beatSec;
+    const barSec = beatSec * beatsPerBar;
+    while (downbeat - barSec > 0.03) downbeat -= barSec;
+    return downbeat;
+  }
+  function estimateTempo(flux, hopSec) {
+    let peak = 0;
+    for (let i = 0; i < flux.length; i++) if (flux[i] > peak) peak = flux[i];
+    if (peak < 1e-4 || flux.length < 20) return { bpm: 96, firstBeat: 0 };
+    let bestBpm = 96;
+    let bestScore = -Infinity;
+    for (let bpm2 = 60; bpm2 <= 180; bpm2 += 0.5) {
+      const period = 60 / bpm2 / hopSec;
+      const steps = 16;
+      let local = -Infinity;
+      for (let p = 0; p < steps; p++) {
+        const s = scoreGrid(flux, period, p / steps * period);
+        if (s > local) local = s;
+      }
+      const score = local * priorFor(bpm2);
+      if (score > bestScore) {
+        bestScore = score;
+        bestBpm = bpm2;
+      }
+    }
+    let refined = bestBpm;
+    bestScore = -Infinity;
+    for (let bpm2 = bestBpm - 1; bpm2 <= bestBpm + 1; bpm2 += 0.1) {
+      const clamped = Math.max(60, Math.min(180, bpm2));
+      const period = 60 / clamped / hopSec;
+      let local = -Infinity;
+      const steps = 24;
+      for (let p = 0; p < steps; p++) {
+        const s = scoreGrid(flux, period, p / steps * period);
+        if (s > local) local = s;
+      }
+      const score = local * priorFor(clamped);
+      if (score > bestScore) {
+        bestScore = score;
+        refined = clamped;
+      }
+    }
+    const bpm = Math.round(Math.max(60, Math.min(180, refined)));
+    const firstBeat = phaseAtBpm(flux, hopSec, bpm);
+    return { bpm, firstBeat };
+  }
+  function estimateKey(frames) {
+    const hist = new Float64Array(12);
+    for (let i = 0; i < frames.length; i++) {
+      const m = frames[i].midi;
+      if (m == null) continue;
+      const prev = frames[i - 1]?.midi;
+      const next = frames[i + 1]?.midi;
+      let w = frames[i].conf;
+      if (prev != null && next != null && Math.abs(prev - m) < 0.35 && Math.abs(next - m) < 0.35) w *= 1.7;
+      hist[pitchClass(m)] += w;
+    }
+    let total = 0;
+    for (let i = 0; i < 12; i++) total += hist[i];
+    if (total < 4) return { root: 0, mode: "major", score: 0 };
+    let best = { root: 0, mode: "major", score: -Infinity };
+    let second = { root: 0, mode: "minor", score: -Infinity };
+    const rotated = new Float64Array(12);
+    for (let root = 0; root < 12; root++) {
+      for (const mode of ["major", "minor"]) {
+        const profile = mode === "major" ? MAJOR_PROFILE : MINOR_PROFILE;
+        for (let i = 0; i < 12; i++) rotated[i] = profile[(i - root + 12) % 12];
+        const score = pearson(hist, rotated);
+        const cand = { root, mode, score };
+        if (score > best.score) {
+          second = best;
+          best = cand;
+        } else if (score > second.score) {
+          second = cand;
+        }
+      }
+    }
+    const relative = best.mode !== second.mode && ((best.mode === "major" ? best.root : second.root) + 12) % 12 === ((best.mode === "minor" ? best.root : second.root) + 3) % 12;
+    if (relative && best.score - second.score < 0.045) {
+      const tonicMass = (c) => hist[c.root];
+      if (tonicMass(second) > tonicMass(best) * 1.08) best = second;
+    }
+    return best;
+  }
+  function waveformPeaks(samples, buckets = 720) {
+    const out = [];
+    if (samples.length === 0) return out;
+    const size = Math.max(1, Math.floor(samples.length / buckets));
+    const n = Math.ceil(samples.length / size);
+    for (let i = 0; i < n; i++) {
+      let mn = 0;
+      let mx = 0;
+      const a = i * size;
+      const b = Math.min(samples.length, a + size);
+      for (let j = a; j < b; j++) {
+        const s = samples[j];
+        if (s < mn) mn = s;
+        if (s > mx) mx = s;
+      }
+      out.push({ min: mn, max: mx });
+    }
+    return out;
+  }
+  async function analyzeVocal(samples, sampleRate, onProgress) {
+    const mono = normalizePeak(samples);
+    const duration = mono.length / sampleRate;
+    onProgress?.("Listening for the pulse", 0.04);
+    const { flux, hop } = onsetFlux(mono, sampleRate);
+    onProgress?.("Locking the bar grid", 0.18);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const tempo = estimateTempo(flux, hop);
+    onProgress?.("Following the vocal, smoothing vibrato", 0.28);
+    const raw = await trackPitch(mono, sampleRate, (r) => {
+      onProgress?.("Following the vocal, smoothing vibrato", 0.28 + r * 0.62);
+    });
+    const frames = smoothContour(raw);
+    onProgress?.("Choosing a key", 0.94);
+    const key = estimateKey(frames);
+    let voiced = 0;
+    for (const f of frames) if (f.midi != null) voiced++;
+    onProgress?.("Choosing a key", 1);
+    return {
+      duration,
+      sampleRate,
+      waveform: waveformPeaks(mono),
+      frames,
+      frameHop: 80 / PITCH_RATE,
+      flux,
+      fluxHop: hop,
+      detectedBpm: tempo.bpm,
+      detectedFirstBeat: tempo.firstBeat,
+      detectedRoot: key.root,
+      detectedMode: key.mode,
+      keyScore: key.score,
+      voicedFraction: frames.length === 0 ? 0 : voiced / frames.length
+    };
+  }
+
+  // src/lib/cantor/arrange.ts
+  function median(values) {
+    const a = values.slice().sort((x, y) => x - y);
+    const mid = a.length >> 1;
+    if (a.length % 2 === 1) return a[mid];
+    return (a[mid - 1] + a[mid]) / 2;
+  }
+  function eighthWeight(index, meter) {
+    const off = index % 2 === 1;
+    if (off) return 0.38;
+    const beat = Math.floor(index / 2);
+    if (beat === 0) return 4;
+    if (meter === 4 && beat === 2) return 2.15;
+    if (meter === 3 && beat === 2) return 1.25;
+    return 1;
+  }
+  function buildCells(features, bpm, downbeat, root, mode) {
+    const eighth = 60 / bpm / 2;
+    const scale = buildScale(root, mode);
+    const frames = features.frames;
+    let t = downbeat;
+    while (t > 1e-4) t -= eighth;
+    const cells = [];
+    let fi = 0;
+    for (; t < features.duration - eighth * 0.2; t += eighth) {
+      const t0 = t;
+      const t1 = t + eighth;
+      const overlap = Math.min(t1, features.duration) - Math.max(t0, 0);
+      if (overlap < eighth * 0.4) continue;
+      while (fi < frames.length && frames[fi].t < t0) fi++;
+      const values = [];
+      let total = 0;
+      for (let k = fi; k < frames.length && frames[k].t < t1; k++) {
+        total++;
+        const m = frames[k].midi;
+        if (m != null) values.push(m);
+      }
+      const voiced = total > 0 && values.length / total >= 0.34 && values.length >= 2;
+      if (!voiced) {
+        cells.push({
+          start: t0,
+          duration: eighth,
+          midi: null,
+          heard: null,
+          diatonic: false,
+          passing: false,
+          voiced: false
+        });
+        continue;
+      }
+      const heard = median(values);
+      const rounded = Math.round(heard);
+      const diatonic = inScale(rounded, root, mode);
+      const snapped = diatonic ? rounded : nearestScaleTone(heard, scale);
+      cells.push({
+        start: t0,
+        duration: eighth,
+        midi: snapped,
+        heard,
+        diatonic,
+        passing: false,
+        voiced: true
+      });
+    }
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+      if (!cell.voiced || cell.midi == null || !cell.diatonic) continue;
+      const prev = cells[i - 1];
+      const next = cells[i + 1];
+      const index = Math.round((cell.start - downbeat) / eighth);
+      const off = (index % 2 + 2) % 2 === 1;
+      if (off && prev?.midi != null && next?.midi != null && Math.abs(prev.midi - cell.midi) >= 1 && Math.abs(next.midi - cell.midi) >= 1) {
+        cell.passing = true;
+      }
+    }
+    return cells;
+  }
+  function placeUppers(triad, center) {
+    const r = triad.rootPc;
+    const third = r + (triad.third - r + 12) % 12;
+    const fifth = third + (triad.fifth - triad.third + 12) % 12;
+    const shapes = [
+      [r, third, fifth],
+      [third, fifth, r + 12],
+      [fifth, r + 12, third + 12]
+    ];
+    const out = [];
+    for (const shape of shapes) {
+      const avg = (shape[0] + shape[1] + shape[2]) / 3;
+      const shift = Math.round((center - avg) / 12) * 12;
+      for (const oct of [-12, 0, 12]) {
+        const voiced = shape.map((n) => n + shift + oct);
+        if (voiced.every((n) => n >= 52 && n <= 79)) out.push(voiced);
+      }
+    }
+    if (out.length === 0) {
+      const shape = shapes[0];
+      const avg = (shape[0] + shape[1] + shape[2]) / 3;
+      const shift = Math.round((64 - avg) / 12) * 12;
+      out.push(shape.map((n) => n + shift));
+    }
+    return out;
+  }
+  function voiceCost(next, prev) {
+    if (!prev) return 0;
+    let cost = 0;
+    for (let i = 0; i < 3; i++) {
+      const leap = Math.abs(next[i] - prev[i]);
+      cost += leap;
+      if (leap > 7) cost += (leap - 7) * 2.4;
+    }
+    return cost;
+  }
+  function chooseBass(rootPc, prev) {
+    const target = prev ?? 43;
+    let best = 36 + (rootPc - 36) % 12 + 36;
+    let bestD = Infinity;
+    for (let m = 36; m <= 52; m++) {
+      if (pitchClass(m) !== rootPc) continue;
+      const d = Math.abs(m - target);
+      if (d < bestD) {
+        bestD = d;
+        best = m;
+      }
+    }
+    return best;
+  }
+  function chooseChord(votes, strongPc, root, mode, prevRoot) {
+    const triads = diatonicTriads(root, mode);
+    const primary = mode === "major" ? /* @__PURE__ */ new Set([0, 3, 4, 5]) : /* @__PURE__ */ new Set([0, 3, 5, 6]);
+    let best = null;
+    let bestScore = -Infinity;
+    for (const triad of triads) {
+      let pos = 0;
+      let neg = 0;
+      for (const vote of votes) {
+        if (triadContains(triad, vote.pc)) pos += vote.weight;
+        else neg += vote.weight;
+      }
+      const fit = (pos - 0.4 * neg) / (pos + neg || 1);
+      let score = fit * 3.15;
+      if (primary.has(triad.degreeIndex) && !triad.altered) score += 0.16;
+      if (triad.quality === "dim") score -= 0.95;
+      if (strongPc != null && strongPc === triad.rootPc) score += 0.64;
+      else if (strongPc != null && triadContains(triad, strongPc)) score += 0.16;
+      if (prevRoot != null) score -= rootMotionCost(prevRoot, triad.rootPc);
+      if (score > bestScore) {
+        bestScore = score;
+        best = triad;
+      }
+    }
+    return best;
+  }
+  function scaleIndex(scale, midi) {
+    let best = 0;
+    let dist = Infinity;
+    for (let i = 0; i < scale.length; i++) {
+      const d = Math.abs(scale[i] - midi);
+      if (d < dist) {
+        dist = d;
+        best = i;
+      }
+    }
+    return best;
+  }
+  function moveToward(current, target, scale, maxLeap) {
+    if (Math.abs(target - current) <= maxLeap) return target;
+    const dir = Math.sign(target - current);
+    let best = current;
+    let bestDist = Math.abs(current - target);
+    for (const tone of scale) {
+      const delta = tone - current;
+      if (Math.sign(delta) !== dir || Math.abs(delta) > maxLeap) continue;
+      const dist = Math.abs(tone - target);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = tone;
+      }
+    }
+    return best;
+  }
+  function counterTarget(vocal, scale) {
+    const snapped = nearestScaleTone(vocal, scale);
+    let idx = scaleIndex(scale, snapped);
+    let target = scale[Math.max(0, idx - 2)];
+    if (snapped - target < 3) target = scale[Math.max(0, idx - 4)] ?? target;
+    idx = scaleIndex(scale, target);
+    while (target > snapped - 3 && idx > 0) {
+      idx--;
+      target = scale[idx];
+    }
+    while (target < 48) {
+      const up = target + 12;
+      if (up > snapped - 3) break;
+      target = up;
+    }
+    if (target > snapped - 3 && target - 12 >= 40) target -= 12;
+    return clamp(target, 40, 74);
+  }
+  function pushPad(notes, voicing, start, duration) {
+    const [bass, ...upper] = voicing;
+    notes.push({ midi: bass, start, duration, gain: 0.042, role: "bass" });
+    for (const midi of upper) notes.push({ midi, start, duration, gain: 0.034, role: "chord" });
+  }
+  function pushPiano(notes, voicing, start, duration, bpm, meter) {
+    const beat = 60 / bpm;
+    const [bass, ...upper] = voicing;
+    const bassDur = Math.min(duration, beat * (meter === 3 ? 2 : 2));
+    notes.push({ midi: bass, start, duration: bassDur, gain: 0.1, role: "bass" });
+    const stab = Math.min(beat * 0.95, duration);
+    for (const midi of upper) notes.push({ midi, start, duration: stab, gain: 0.072, role: "chord" });
+    if (meter === 4 && duration > beat * 2.2) {
+      const echo = start + beat * 2;
+      for (const midi of upper) {
+        notes.push({ midi, start: echo, duration: Math.min(stab, start + duration - echo), gain: 0.05, role: "chord" });
+      }
+    }
+  }
+  function pushArp(notes, voicing, start, duration, bpm, meter, rising) {
+    const eighth = 60 / bpm / 2;
+    const steps = meter * 2;
+    const pattern = rising ? [0, 1, 2, 3, 2, 1, 2, 3] : [0, 3, 2, 1, 2, 3, 2, 1];
+    for (let s = 0; s < steps; s++) {
+      const at = start + s * eighth;
+      if (at >= start + duration - 0.02) break;
+      const idx = pattern[s % pattern.length];
+      notes.push({
+        midi: voicing[idx],
+        start: at,
+        duration: eighth * 0.88,
+        gain: idx === 0 ? 0.085 : 0.06,
+        role: idx === 0 ? "bass" : "chord"
+      });
+    }
+  }
+  function arrange(features, opts) {
+    const bpm = clamp(Math.round(opts.bpm ?? features.detectedBpm), 60, 180);
+    const root = opts.root ?? features.detectedRoot;
+    const mode = opts.mode ?? features.detectedMode;
+    const meter = opts.meter;
+    let firstBeat = features.detectedFirstBeat;
+    if (opts.bpm != null && Math.round(opts.bpm) !== features.detectedBpm) {
+      firstBeat = phaseAtBpm(features.flux, features.fluxHop, bpm);
+    }
+    const downbeat = downbeatAt(features.flux, features.fluxHop, bpm, firstBeat, meter);
+    const cells = buildCells(features, bpm, downbeat, root, mode);
+    const barDur = 60 / bpm * meter;
+    const eighth = 60 / bpm / 2;
+    const scale = buildScale(root, mode, 40, 81);
+    const chords = [];
+    const notes = [];
+    let prevUpper = null;
+    let prevBass = null;
+    let prevRoot = null;
+    let prevMel = null;
+    let prevLine = null;
+    let barStart = downbeat;
+    while (barStart > 0.02) barStart -= barDur;
+    for (; barStart < features.duration - barDur * 0.28; barStart += barDur) {
+      const barEnd = barStart + barDur;
+      const inBar = cells.filter((c) => c.start >= barStart - 1e-4 && c.start < barEnd - 1e-4);
+      const votes = [];
+      let strongPc = null;
+      let strongW = -1;
+      const heard = [];
+      for (const cell of inBar) {
+        if (!cell.voiced || cell.midi == null || !cell.diatonic) continue;
+        heard.push(cell.midi);
+        const index = Math.round((cell.start - barStart) / eighth);
+        let w = eighthWeight(Math.max(0, index), meter);
+        if (cell.passing) w *= 0.22;
+        const pc = pitchClass(cell.midi);
+        votes.push({ pc, weight: w });
+        if (w > strongW) {
+          strongW = w;
+          strongPc = pc;
+        }
+      }
+      const weightSum = votes.reduce((s, v) => s + v.weight, 0);
+      const melMedian = heard.length ? median(heard) : null;
+      if (opts.style === "line") {
+        const quarters = meter;
+        const qDur = barDur / quarters;
+        for (let q = 0; q < quarters; q++) {
+          const q0 = barStart + q * qDur;
+          const q1 = q0 + qDur;
+          const group = inBar.filter((c) => c.voiced && c.midi != null && c.start >= q0 - 1e-4 && c.start < q1 - 1e-4);
+          if (group.length === 0) {
+            prevLine = null;
+            continue;
+          }
+          const vocal = median(group.map((c) => c.midi));
+          let target = counterTarget(vocal, scale);
+          if (prevLine != null) target = moveToward(prevLine, target, scale, 5);
+          if (vocal - target < 3) continue;
+          const at = Math.max(0, q0);
+          const dur = Math.min(features.duration, q1) - at;
+          if (dur < 0.05) continue;
+          notes.push({ midi: target, start: at, duration: dur * 0.94, gain: 0.078, role: "line" });
+          prevLine = target;
+        }
+      }
+      if (weightSum < 1.15 || melMedian == null) {
+        prevMel = melMedian ?? prevMel;
+        continue;
+      }
+      const triad = chooseChord(votes, strongPc, root, mode, prevRoot);
+      if (!triad) continue;
+      const dir = prevMel == null ? 0 : clamp(melMedian - prevMel, -8, 8);
+      const prevAvg = prevUpper ? (prevUpper[0] + prevUpper[1] + prevUpper[2]) / 3 : 64;
+      const center = prevAvg + clamp(dir * 0.45, -5, 5);
+      let bass = chooseBass(triad.rootPc, prevBass);
+      let bestUpper = null;
+      let bestCost = Infinity;
+      const candidates = placeUppers(triad, center);
+      for (const upper of candidates) {
+        let cost = voiceCost(upper, prevUpper);
+        if (upper[0] < bass + 5) cost += 6;
+        const avg = (upper[0] + upper[1] + upper[2]) / 3;
+        cost += Math.abs(avg - center) * 0.18;
+        if (!prevUpper) cost += Math.abs(avg - 64) * 0.05;
+        if (cost < bestCost) {
+          bestCost = cost;
+          bestUpper = upper;
+        }
+      }
+      if (!bestUpper) continue;
+      if (bestUpper[0] < bass + 5 && bass - 12 >= 36) bass -= 12;
+      const start = Math.max(0, barStart);
+      const end = Math.min(features.duration, barEnd);
+      const duration = end - start;
+      if (duration < 0.08) continue;
+      const voicing = [bass, bestUpper[0], bestUpper[1], bestUpper[2]];
+      chords.push({
+        symbol: triadSymbol(triad),
+        degree: triad.degree,
+        start,
+        duration,
+        voicing
+      });
+      if (opts.style === "pad") pushPad(notes, voicing, start, duration);
+      else if (opts.style === "piano") pushPiano(notes, voicing, start, duration, bpm, meter);
+      else if (opts.style === "arp") {
+        const mid = barStart + barDur / 2;
+        const early = heard.length ? inBar.filter((c) => c.voiced && c.midi != null && c.start < mid) : [];
+        const late = inBar.filter((c) => c.voiced && c.midi != null && c.start >= mid);
+        const a = early.length ? median(early.map((c) => c.midi)) : melMedian;
+        const b = late.length ? median(late.map((c) => c.midi)) : melMedian;
+        pushArp(notes, voicing, start, duration, bpm, meter, b >= a - 0.3);
+      }
+      prevUpper = bestUpper;
+      prevBass = bass;
+      prevRoot = triad.rootPc;
+      prevMel = melMedian;
+    }
+    return {
+      bpm,
+      meter,
+      root,
+      mode,
+      keyLabel: keyName(root, mode),
+      downbeat,
+      cells,
+      chords,
+      notes
+    };
+  }
+
+  // src/lib/cantor/demo.ts
+  function makeDemoVocal(sampleRate = 44100) {
+    const bpm = 96;
+    const beat = 60 / bpm;
+    const phrase = [
+      [60, 1],
+      [64, 1],
+      [67, 1],
+      [64, 1],
+      [65, 1],
+      [69, 1],
+      [72, 1],
+      [69, 1],
+      [67, 1],
+      [71, 1],
+      [74, 1],
+      [71, 1],
+      [60, 1],
+      [64, 1],
+      [62, 1],
+      [60, 1]
+    ];
+    const beats = phrase.reduce((sum, note) => sum + note[1], 0);
+    const out = new Float32Array(Math.ceil((beats * beat + 0.35) * sampleRate));
+    let t = 0;
+    let index = 0;
+    for (const [midi, length] of phrase) {
+      const dur = length * beat;
+      const downbeat = index % 4 === 0;
+      sing(out, sampleRate, t, dur * 0.88, midi, downbeat ? 1 : 0.58);
+      t += dur;
+      index += length;
+    }
+    return out;
+  }
+  function noise(i) {
+    const x = Math.imul(i, 1103515245) + 12345 & 2147483647;
+    return x % 1e4 / 5e3 - 1;
+  }
+  function sing(out, sampleRate, start, dur, midi, accent) {
+    const f0 = midiToHz(midi);
+    const a0 = Math.max(0, Math.floor(start * sampleRate));
+    const a1 = Math.min(out.length, Math.floor((start + dur) * sampleRate));
+    const amps = [1, 0.52, 0.26, 0.13, 0.06, 0.035];
+    let phase = 0;
+    let prevT = 0;
+    for (let i = a0; i < a1; i++) {
+      const t = i / sampleRate - start;
+      const dt = t - prevT;
+      prevT = t;
+      const vib = t > 0.045 ? Math.sin(2 * Math.PI * 5.4 * t) * 0.42 : 0;
+      const hz = f0 * 2 ** (vib / 12);
+      phase += 2 * Math.PI * hz * dt;
+      let s = 0;
+      for (let h = 0; h < amps.length; h++) s += amps[h] * Math.sin(phase * (h + 1));
+      const attack = Math.min(1, t / 0.02);
+      const release = Math.min(1, Math.max(0, (dur - t) / 0.045));
+      const env = Math.min(attack, release);
+      let burst = 0;
+      const burstLen = accent > 0.8 ? 0.018 : 0.01;
+      if (t < burstLen) burst = noise(i) * (1 - t / burstLen) * (accent > 0.8 ? 0.7 : 0.28);
+      out[i] += s / 2.05 * env * 0.36 * accent + burst;
+    }
+  }
+
+  // src/lib/cantor/synth.ts
+  var HIGH = {
+    pad: {
+      waves: ["sawtooth", "triangle"],
+      detunes: [0, 7],
+      cutoff: 820,
+      attack: 0.085,
+      decay: 0.2,
+      sustain: 0.8,
+      release: 0.3
+    },
+    piano: {
+      waves: ["triangle"],
+      detunes: [0],
+      cutoff: 1700,
+      attack: 7e-3,
+      decay: 0.28,
+      sustain: 0.15,
+      release: 0.16
+    },
+    arp: {
+      waves: ["triangle"],
+      detunes: [0],
+      cutoff: 2e3,
+      attack: 5e-3,
+      decay: 0.13,
+      sustain: 0.06,
+      release: 0.07
+    },
+    line: {
+      waves: ["sine"],
+      detunes: [0],
+      cutoff: 2400,
+      attack: 0.018,
+      decay: 0.1,
+      sustain: 0.74,
+      release: 0.13
+    }
+  };
+  var BASS = {
+    waves: ["sine"],
+    detunes: [0],
+    cutoff: 380,
+    attack: 0.012,
+    decay: 0.16,
+    sustain: 0.62,
+    release: 0.11
+  };
+  function patchFor(style, midi) {
+    if (midi < 50) {
+      if (style === "pad") {
+        return { ...BASS, attack: 0.07, decay: 0.18, sustain: 0.78, release: 0.28, cutoff: 340 };
+      }
+      return BASS;
+    }
+    return HIGH[style];
+  }
+  function later(time, prev) {
+    return time <= prev ? prev + 1e-3 : time;
+  }
+  function scheduleNote(ctx, dest, when, dur, midi, peak, style, sink) {
+    if (!Number.isFinite(midi) || !Number.isFinite(dur) || dur <= 0.025 || peak <= 0) return;
+    const patch = patchFor(style, midi);
+    const freq = 440 * 2 ** ((midi - 69) / 12);
+    const pre = ctx.createGain();
+    pre.gain.value = 1 / patch.waves.length;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.value = patch.cutoff;
+    filter.Q.value = 0.55;
+    const env = ctx.createGain();
+    pre.connect(filter);
+    filter.connect(env);
+    env.connect(dest);
+    const attackEnd = later(when + Math.min(patch.attack, Math.max(4e-3, dur * 0.35)), when);
+    const decayEnd = later(Math.min(when + dur, attackEnd + patch.decay), attackEnd);
+    const releaseStart = later(Math.max(decayEnd, when + dur), decayEnd);
+    const releaseEnd = later(releaseStart + patch.release, releaseStart);
+    const sustain = peak * patch.sustain;
+    env.gain.setValueAtTime(1e-4, when);
+    env.gain.linearRampToValueAtTime(Math.max(peak, 2e-4), attackEnd);
+    env.gain.linearRampToValueAtTime(Math.max(sustain, 1e-4), decayEnd);
+    if (releaseStart - decayEnd > 15e-4) env.gain.setValueAtTime(Math.max(sustain, 1e-4), releaseStart);
+    env.gain.linearRampToValueAtTime(1e-4, releaseEnd);
+    for (let i = 0; i < patch.waves.length; i++) {
+      const osc = ctx.createOscillator();
+      osc.type = patch.waves[i];
+      osc.frequency.value = freq;
+      osc.detune.value = patch.detunes[i] ?? 0;
+      osc.connect(pre);
+      osc.start(when);
+      osc.stop(releaseEnd + 0.02);
+      sink?.push(osc);
+    }
+  }
+  function writeStr(view, offset, text) {
+    for (let i = 0; i < text.length; i++) view.setUint8(offset + i, text.charCodeAt(i));
+  }
+  function encodeWav(buffer) {
+    const channels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const length = buffer.length;
+    const data = [];
+    for (let c = 0; c < channels; c++) data.push(buffer.getChannelData(c));
+    const block = channels * 2;
+    const bytes = new ArrayBuffer(44 + length * block);
+    const view = new DataView(bytes);
+    writeStr(view, 0, "RIFF");
+    view.setUint32(4, 36 + length * block, true);
+    writeStr(view, 8, "WAVE");
+    writeStr(view, 12, "fmt ");
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, channels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * block, true);
+    view.setUint16(32, block, true);
+    view.setUint16(34, 16, true);
+    writeStr(view, 36, "data");
+    view.setUint32(40, length * block, true);
+    let offset = 44;
+    for (let i = 0; i < length; i++) {
+      for (let c = 0; c < channels; c++) {
+        const s = Math.max(-1, Math.min(1, data[c][i]));
+        view.setInt16(offset, s < 0 ? s * 32768 : s * 32767, true);
+        offset += 2;
+      }
+    }
+    return new Blob([bytes], { type: "audio/wav" });
+  }
+  async function exportMix(vocal, notes, style, bedLevel, maxSec = 360) {
+    const sampleRate = vocal.sampleRate;
+    const dur = Math.min(maxSec, vocal.duration + 0.45);
+    const offline = new OfflineAudioContext(2, Math.ceil(dur * sampleRate), sampleRate);
+    const vocalGain = offline.createGain();
+    vocalGain.gain.value = 0.92;
+    vocalGain.connect(offline.destination);
+    const bedGain = offline.createGain();
+    bedGain.gain.value = bedLevel;
+    const comp = offline.createDynamicsCompressor();
+    comp.threshold.value = -16;
+    comp.knee.value = 8;
+    comp.ratio.value = 2.4;
+    comp.attack.value = 0.01;
+    comp.release.value = 0.18;
+    bedGain.connect(comp);
+    comp.connect(offline.destination);
+    const src = offline.createBufferSource();
+    src.buffer = vocal;
+    src.connect(vocalGain);
+    src.start(0);
+    for (const note of notes) {
+      if (note.start >= dur) continue;
+      const noteDur = Math.min(note.duration, dur - note.start);
+      scheduleNote(offline, bedGain, note.start, noteDur, note.midi, note.gain, style);
+    }
+    const rendered = await offline.startRendering();
+    return encodeWav(rendered);
+  }
+  var BedPlayer = class {
+    ctx = null;
+    vocal = null;
+    notes = [];
+    style = "pad";
+    bedLevel = 1;
+    playing = false;
+    nodes = [];
+    vocalGain = null;
+    bedGain = null;
+    startedAt = 0;
+    origin = 0;
+    prime() {
+      if (!this.ctx) {
+        const ctx = new AudioContext();
+        this.ctx = ctx;
+        this.vocalGain = ctx.createGain();
+        this.bedGain = ctx.createGain();
+        this.vocalGain.gain.value = 0.92;
+        this.bedGain.gain.value = this.bedLevel;
+        const comp = ctx.createDynamicsCompressor();
+        comp.threshold.value = -16;
+        comp.knee.value = 8;
+        comp.ratio.value = 2.4;
+        comp.attack.value = 0.01;
+        comp.release.value = 0.18;
+        this.bedGain.connect(comp);
+        comp.connect(ctx.destination);
+        this.vocalGain.connect(ctx.destination);
+      }
+      void this.ctx.resume();
+      return this.ctx;
+    }
+    setBed(level) {
+      this.bedLevel = level;
+      if (this.bedGain && this.ctx) this.bedGain.gain.setTargetAtTime(level, this.ctx.currentTime, 0.03);
+    }
+    currentTime() {
+      if (!this.playing || !this.ctx) return this.origin;
+      return Math.max(0, this.ctx.currentTime - this.startedAt);
+    }
+    makeBuffer(samples, sampleRate) {
+      const ctx = this.prime();
+      const buffer = ctx.createBuffer(1, samples.length, sampleRate);
+      buffer.getChannelData(0).set(samples);
+      return buffer;
+    }
+    stopNodes() {
+      for (const node of this.nodes) {
+        try {
+          node.stop();
+        } catch {
+        }
+        try {
+          node.disconnect();
+        } catch {
+        }
+      }
+      this.nodes = [];
+    }
+    play(from) {
+      const ctx = this.prime();
+      this.stopNodes();
+      const when = ctx.currentTime + 0.06;
+      const offset = Math.max(0, from);
+      this.startedAt = when - offset;
+      this.origin = offset;
+      this.playing = true;
+      if (this.vocal && this.vocalGain) {
+        const src = ctx.createBufferSource();
+        src.buffer = this.vocal;
+        src.connect(this.vocalGain);
+        const startAt = Math.min(offset, Math.max(0, this.vocal.duration - 0.02));
+        src.start(when, startAt);
+        this.nodes.push(src);
+      }
+      const dest = this.bedGain;
+      if (!dest) return;
+      for (const note of this.notes) {
+        const end = note.start + note.duration;
+        if (end <= offset + 0.012) continue;
+        const local = Math.max(note.start, offset);
+        scheduleNote(ctx, dest, when + (local - offset), end - local, note.midi, note.gain, this.style, this.nodes);
+      }
+    }
+    pause() {
+      if (this.ctx && this.playing) this.origin = Math.max(0, this.ctx.currentTime - this.startedAt);
+      this.stopNodes();
+      this.playing = false;
+    }
+  };
+  return __toCommonJS(voc2inst_entry_exports);
+})();
+</script>
+<script>
+const STYLES = [
+  { id: "pad", label: "Pad", hint: "Sustained triads, one chord per bar, voiced in close position." },
+  { id: "piano", label: "Piano", hint: "Block chords and a bass that follow the phrase without leaping." },
+  { id: "arp", label: "Arpeggio", hint: "Broken chords that rise or fall with the vocal." },
+  { id: "line", label: "Counterline", hint: "A diatonic line a third below. Leaps stay inside a fifth." },
+];
+const INK = "#221e1a", IVORY = "#f4ecdf", MUTED = "#b3a18a", BRASS = "#e0a04a", LINE = "#3c342c";
+
+const player = new Voc2Inst.BedPlayer();
+const $ = (id) => document.getElementById(id);
+let features = null, arrangement = null, fileName = null;
+let phase = "idle", message = "Listening for the pulse", progress = 0, error = null;
+let style = "pad", meter = 4, bpmDraft = null, rootDraft = null, modeDraft = null;
+let bed = 1, playing = false, exporting = false, capped = false, job = 0;
+
+const keySelect = $("keySelect");
+for (let root = 0; root < 12; root++) {
+  for (const mode of ["major", "minor"]) {
+    const opt = document.createElement("option");
+    opt.value = root + ":" + mode;
+    opt.textContent = Voc2Inst.NOTE_NAMES[root] + " " + mode;
+    keySelect.appendChild(opt);
+  }
+}
+const stylesEl = $("styles");
+for (const item of STYLES) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "btn ghost";
+  btn.textContent = item.label;
+  btn.dataset.style = item.id;
+  btn.addEventListener("click", () => { style = item.id; syncStyle(); paintNow(); });
+  stylesEl.appendChild(btn);
+}
+
+function fmt(sec) {
+  const safe = Number.isFinite(sec) ? Math.max(0, sec) : 0;
+  const whole = Math.floor(safe);
+  return Math.floor(whole / 60) + ":" + String(whole % 60).padStart(2, "0");
+}
+function shownBpm() { return bpmDraft ?? features?.detectedBpm ?? 96; }
+function shownRoot() { return rootDraft ?? features?.detectedRoot ?? 0; }
+function shownMode() { return modeDraft ?? features?.detectedMode ?? "major"; }
+function ready() { return phase === "ready" && features && arrangement; }
+
+function recompute() {
+  if (!features) { arrangement = null; return; }
+  arrangement = Voc2Inst.arrange(features, {
+    bpm: bpmDraft, root: rootDraft, mode: modeDraft, meter, style,
+  });
+  player.notes = arrangement.notes;
+  player.style = style;
+  if (player.playing) player.play(player.currentTime());
+}
+
+function syncStyle() {
+  for (const btn of stylesEl.querySelectorAll("button")) {
+    const on = btn.dataset.style === style;
+    btn.className = on ? "btn on" : "btn ghost";
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+  $("styleHint").textContent = STYLES.find((item) => item.id === style).hint;
+}
+
+function render() {
+  const ok = !!ready();
+  $("keyLabel").textContent = features ? Voc2Inst.NOTE_NAMES[shownRoot()] + " " + shownMode() : "—";
+  $("metaLabel").textContent = ok ? shownBpm() + " bpm · " + meter + "/4" : "Drop a vocal to begin";
+  $("bpm").value = String(shownBpm());
+  $("bpmRead").textContent = String(shownBpm());
+  $("bpm").disabled = !ok;
+  keySelect.disabled = !ok;
+  keySelect.value = shownRoot() + ":" + shownMode();
+  $("m4").disabled = !ok;
+  $("m3").disabled = !ok;
+  $("m4").className = meter === 4 ? "btn on" : "btn ghost";
+  $("m3").className = meter === 3 ? "btn on" : "btn ghost";
+  const overridden = bpmDraft != null || rootDraft != null || modeDraft != null;
+  $("resetBtn").disabled = !ok || !overridden;
+  $("playBtn").disabled = !ok;
+  $("playBtn").textContent = playing ? "Pause" : "Play";
+  $("exportBtn").disabled = !ok || exporting;
+  $("exportBtn").textContent = exporting ? "Rendering…" : "Export WAV";
+  $("clock").textContent = fmt(player.currentTime()) + " / " + fmt(features?.duration ?? 0);
+  $("capped").hidden = !capped;
+  const alert = $("alert");
+  if (error && phase === "ready") { alert.hidden = false; alert.textContent = error; }
+  else alert.hidden = true;
+
+  const veil = $("veil");
+  veil.hidden = phase === "ready";
+  $("meter").hidden = phase !== "working";
+  $("meterFill").style.width = Math.round(progress * 100) + "%";
+  $("demoBtn").hidden = phase === "working";
+  if (phase === "working") {
+    $("veilTitle").textContent = message;
+    $("veilCopy").textContent = "";
+  } else if (phase === "error") {
+    $("veilTitle").textContent = "That take didn't open.";
+    $("veilCopy").textContent = error || "Try a WAV or MP3 vocal.";
+  } else {
+    $("veilTitle").textContent = "The staff is empty.";
+    $("veilCopy").textContent = "Drop a vocal, or sound a short phrase in C so you can hear the bed before you commit a take.";
+  }
+
+  const block = $("chordBlock");
+  block.hidden = !ok;
+  if (ok) {
+    const sparse = features.voicedFraction < 0.08 ? " · sparse pitch" : "";
+    $("gridNote").textContent = (overridden ? "Grid set by you" : "Grid from the vocal") + sparse;
+    const list = $("chords");
+    list.replaceChildren();
+    if (arrangement.chords.length === 0) {
+      const li = document.createElement("li");
+      li.textContent = "No stable phrase to harmonize. The take may be too quiet or too spoken.";
+      list.appendChild(li);
+    } else {
+      for (const chord of arrangement.chords) {
+        const li = document.createElement("li");
+        li.innerHTML = '<span class="deg"></span><span class="sym"></span>';
+        li.querySelector(".deg").textContent = chord.degree;
+        li.querySelector(".sym").textContent = chord.symbol;
+        list.appendChild(li);
+      }
+    }
+  }
+  $("fileName").textContent = fileName || "Drop a WAV or MP3 vocal";
+  $("fileHint").textContent = fileName ? "Drop another take to replace it" : "Or click to browse";
+  syncStyle();
+}
+
+function paint(canvas, playhead) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = canvas.getBoundingClientRect();
+  const w = Math.max(1, Math.floor(rect.width * dpr));
+  const h = Math.max(1, Math.floor(rect.height * dpr));
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, w, h);
+  ctx.fillStyle = INK;
+  ctx.fillRect(0, 0, w, h);
+  const top = h * 0.22, bot = h * 0.9, left = Math.round(w * 0.03), right = Math.round(w * 0.985);
+  const plotW = Math.max(1, right - left);
+  ctx.strokeStyle = LINE;
+  ctx.lineWidth = Math.max(1, dpr);
+  for (let i = 0; i < 5; i++) {
+    const y = top + ((bot - top) * i) / 4;
+    ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke();
+  }
+  if (!features || !arrangement || features.duration <= 0) return;
+  const dur = features.duration;
+  const xOf = (t) => left + (Math.min(dur, Math.max(0, t)) / dur) * plotW;
+  const wave = features.waveform;
+  const midY = (top + bot) / 2;
+  const amp = (bot - top) * 0.36;
+  ctx.beginPath();
+  ctx.moveTo(left, midY);
+  for (let i = 0; i < wave.length; i++) ctx.lineTo(left + (i / Math.max(1, wave.length)) * plotW, midY - wave[i].max * amp);
+  for (let i = wave.length - 1; i >= 0; i--) ctx.lineTo(left + (i / Math.max(1, wave.length)) * plotW, midY - wave[i].min * amp);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(224, 160, 74, 0.16)";
+  ctx.fill();
+  let lo = 58, hi = 74, found = false;
+  for (const frame of features.frames) {
+    if (frame.midi == null) continue;
+    if (!found) { lo = hi = frame.midi; found = true; }
+    else { if (frame.midi < lo) lo = frame.midi; if (frame.midi > hi) hi = frame.midi; }
+  }
+  lo -= 3; hi += 3;
+  if (hi - lo < 12) { const mid = (hi + lo) / 2; lo = mid - 6; hi = mid + 6; }
+  const yOf = (midi) => bot - ((midi - lo) / (hi - lo)) * (bot - top);
+  const barDur = (60 / arrangement.bpm) * arrangement.meter;
+  let bar = arrangement.downbeat;
+  while (bar > 0.001) bar -= barDur;
+  ctx.textBaseline = "top";
+  while (bar < dur + barDur * 0.2) {
+    const x = xOf(Math.max(0, bar));
+    ctx.strokeStyle = LINE;
+    ctx.lineWidth = Math.max(1, dpr);
+    ctx.beginPath(); ctx.moveTo(x, h * 0.08); ctx.lineTo(x, bot); ctx.stroke();
+    const chord = arrangement.chords.find((mark) => Math.abs(mark.start - Math.max(0, bar)) < barDur * 0.4);
+    const width = xOf(Math.min(dur, bar + barDur)) - x;
+    if (chord && width > 28 * dpr && bar < dur) {
+      ctx.fillStyle = BRASS;
+      ctx.font = Math.round(15 * dpr) + "px Fraunces, Georgia, serif";
+      ctx.fillText(chord.symbol, x + 6 * dpr, h * 0.045);
+    }
+    bar += barDur;
+  }
+  for (const cell of arrangement.cells) {
+    if (cell.midi == null) continue;
+    const x = xOf(cell.start);
+    const width = Math.max(dpr * 2, (cell.duration / dur) * plotW - dpr);
+    const y = yOf(cell.midi);
+    const solid = cell.diatonic && !cell.passing;
+    ctx.globalAlpha = solid ? 0.92 : 0.4;
+    ctx.fillStyle = solid ? BRASS : MUTED;
+    ctx.fillRect(x, y - 1.5 * dpr, width, 3 * dpr);
+  }
+  ctx.globalAlpha = 1;
+  ctx.beginPath();
+  ctx.strokeStyle = IVORY;
+  ctx.lineWidth = 1.4 * dpr;
+  ctx.lineJoin = "round";
+  ctx.lineCap = "round";
+  let drawing = false;
+  const step = Math.max(1, Math.floor(features.frames.length / 1000));
+  for (let i = 0; i < features.frames.length; i += step) {
+    const frame = features.frames[i];
+    if (frame.midi == null) { drawing = false; continue; }
+    const x = xOf(frame.t), y = yOf(frame.midi);
+    if (!drawing) { ctx.moveTo(x, y); drawing = true; } else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  if (playhead >= 0) {
+    const x = xOf(playhead);
+    ctx.strokeStyle = BRASS;
+    ctx.lineWidth = 1.5 * dpr;
+    ctx.beginPath(); ctx.moveTo(x, h * 0.04); ctx.lineTo(x, bot); ctx.stroke();
+  }
+}
+
+const canvas = $("score");
+function paintNow() { paint(canvas, player.currentTime()); }
+let ended = false;
+function tick() {
+  const time = player.currentTime();
+  paint(canvas, time);
+  if (playing) $("clock").textContent = fmt(time) + " / " + fmt(features?.duration ?? 0);
+  if (playing && features && time >= features.duration - 0.05) {
+    if (!ended) { ended = true; player.pause(); playing = false; render(); }
+  } else if (!playing) ended = false;
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+async function ingest(name, samples, sampleRate, buffer) {
+  const id = ++job;
+  player.pause();
+  playing = false;
+  features = null;
+  arrangement = null;
+  fileName = name;
+  error = null;
+  capped = false;
+  bpmDraft = rootDraft = modeDraft = null;
+  phase = "working";
+  progress = 0.02;
+  message = "Listening for the pulse";
+  render();
+  try {
+    const next = await Voc2Inst.analyzeVocal(samples, sampleRate, (label, ratio) => {
+      if (id !== job) return;
+      message = label;
+      progress = ratio;
+      render();
+    });
+    if (id !== job) return;
+    player.vocal = buffer;
+    player.origin = 0;
+    features = next;
+    phase = "ready";
+    recompute();
+    render();
+    paintNow();
+  } catch (err) {
+    if (id !== job) return;
+    phase = "error";
+    error = err instanceof Error ? err.message : "Could not read that vocal.";
+    render();
+  }
+}
+
+async function onFile(file) {
+  player.prime();
+  phase = "working";
+  message = "Opening the take";
+  error = null;
+  render();
+  try {
+    const encoded = await file.arrayBuffer();
+    const audio = await player.prime().decodeAudioData(encoded.slice(0));
+    const channels = [];
+    for (let c = 0; c < audio.numberOfChannels; c++) channels.push(audio.getChannelData(c));
+    await ingest(file.name, Voc2Inst.mixToMono(channels), audio.sampleRate, audio);
+  } catch {
+    phase = "error";
+    error = "That file didn't decode. Try a WAV or MP3 vocal.";
+    render();
+  }
+}
+
+function onDemo() {
+  player.prime();
+  const samples = Voc2Inst.makeDemoVocal();
+  const buffer = player.makeBuffer(samples, 44100);
+  ingest("Demo phrase", samples, 44100, buffer);
+}
+
+function toggle() {
+  if (!features) return;
+  if (player.playing) { player.pause(); playing = false; render(); return; }
+  let from = player.currentTime();
+  if (from >= features.duration - 0.08) from = 0;
+  player.play(from);
+  playing = true;
+  ended = false;
+  render();
+}
+
+$("demoBtn").addEventListener("click", onDemo);
+$("playBtn").addEventListener("click", toggle);
+$("exportBtn").addEventListener("click", async () => {
+  if (!player.vocal || !arrangement) return;
+  exporting = true;
+  error = null;
+  render();
+  try {
+    const blob = await Voc2Inst.exportMix(player.vocal, arrangement.notes, style, bed);
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "cantor-bed.wav";
+    anchor.click();
+    URL.revokeObjectURL(url);
+    capped = player.vocal.duration > 360;
+  } catch {
+    error = "The mix couldn't be rendered in this browser.";
+  } finally {
+    exporting = false;
+    render();
+  }
+});
+keySelect.addEventListener("change", () => {
+  const [root, mode] = keySelect.value.split(":");
+  rootDraft = Number(root);
+  modeDraft = mode === "minor" ? "minor" : "major";
+  recompute();
+  render();
+});
+$("bpm").addEventListener("input", () => {
+  bpmDraft = Number($("bpm").value);
+  recompute();
+  render();
+});
+$("m4").addEventListener("click", () => { meter = 4; recompute(); render(); });
+$("m3").addEventListener("click", () => { meter = 3; recompute(); render(); });
+$("bed").addEventListener("input", () => {
+  bed = Number($("bed").value);
+  player.setBed(bed);
+});
+$("resetBtn").addEventListener("click", () => {
+  bpmDraft = rootDraft = modeDraft = null;
+  recompute();
+  render();
+});
+$("file").addEventListener("change", (event) => {
+  const file = event.target.files && event.target.files[0];
+  event.target.value = "";
+  if (file) onFile(file);
+});
+const drop = $("drop");
+drop.addEventListener("dragover", (event) => { event.preventDefault(); drop.classList.add("hot"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("hot"));
+drop.addEventListener("drop", (event) => {
+  event.preventDefault();
+  drop.classList.remove("hot");
+  const file = event.dataTransfer.files[0];
+  if (file) onFile(file);
+});
+window.addEventListener("keydown", (event) => {
+  if (event.code !== "Space") return;
+  const tag = event.target && event.target.tagName;
+  if (tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA") return;
+  event.preventDefault();
+  toggle();
+});
+render();
+</script>
+</body>
+</html>
